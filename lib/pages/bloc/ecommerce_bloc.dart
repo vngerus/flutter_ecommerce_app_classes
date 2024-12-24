@@ -1,12 +1,17 @@
+import 'dart:math';
+
 import 'package:ecommerce_app/data.dart';
 import 'package:ecommerce_app/model/product_model.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 
 part 'ecommerce_event.dart';
 part 'ecommerce_state.dart';
 
 class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
+  var uuid = Uuid();
+
   EcommerceBloc() : super(EcommerceState.initial()) {
     on<LoadProductsEvent>(_onLoadProductsEvent);
     on<AddToCartEvent>(_onAddToCartEvent);
@@ -14,7 +19,8 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     on<RemoveCartItemEvent>(_onRemoveCartItemEvent);
   }
 
-  void _onLoadProductsEvent(LoadProductsEvent event, Emitter<EcommerceState> emit) async {
+  void _onLoadProductsEvent(
+      LoadProductsEvent event, Emitter<EcommerceState> emit) async {
     emit(state.copyWith(homeScreenState: HomeScreenState.loading));
 
     await Future.delayed(const Duration(milliseconds: 200));
@@ -25,6 +31,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
         name: json["description"],
         price: double.parse(json["price"].toString()),
         imageUrl: json["image_url"],
+        category: null,
       );
     }).toList();
 
@@ -35,6 +42,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
   }
 
   void _onAddToCartEvent(AddToCartEvent event, Emitter<EcommerceState> emit) {
+    /*   log(uuid.v1()); */
     final exist = state.cart.firstWhere(
       (p) => p.id == event.product.id,
       orElse: () => event.product.copyWith(quantity: 0),
@@ -54,7 +62,8 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     emit(state.copyWith(cart: updateCart));
   }
 
-  void _onUpdateCartQuantityEvent(UpdateCartQuantityEvent event, Emitter<EcommerceState> emit) {
+  void _onUpdateCartQuantityEvent(
+      UpdateCartQuantityEvent event, Emitter<EcommerceState> emit) {
     final updatedCart = state.cart
         .map((p) {
           if (p.id == event.product.id) {
@@ -70,8 +79,10 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     emit(state.copyWith(cart: updatedCart));
   }
 
-  void _onRemoveCartItemEvent(RemoveCartItemEvent event, Emitter<EcommerceState> emit) {
-    final updatedCart = state.cart.where((p) => p.id != event.product.id).toList();
+  void _onRemoveCartItemEvent(
+      RemoveCartItemEvent event, Emitter<EcommerceState> emit) {
+    final updatedCart =
+        state.cart.where((p) => p.id != event.product.id).toList();
 
     emit(state.copyWith(cart: updatedCart));
   }

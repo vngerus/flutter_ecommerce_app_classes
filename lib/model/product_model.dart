@@ -13,6 +13,7 @@ class ProductModel extends Equatable {
     required this.price,
     required this.imageUrl,
     this.quantity = 1,
+    required category,
   });
 
   ProductModel copyWith({
@@ -28,6 +29,7 @@ class ProductModel extends Equatable {
       price: price ?? this.price,
       imageUrl: imageUrl ?? this.imageUrl,
       quantity: quantity ?? this.quantity,
+      category: null,
     );
   }
 
