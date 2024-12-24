@@ -10,6 +10,18 @@ class CartPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => EcommerceBloc()..add(LoadCartItemsEvent()),
+      child: const CartBody(),
+    );
+  }
+}
+
+class CartBody extends StatelessWidget {
+  const CartBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
@@ -66,7 +78,9 @@ class CartPage extends StatelessWidget {
         children: [
           IconButton(
             onPressed: () {
-              context.read<EcommerceBloc>().add(RemoveCartItemEvent(product: product));
+              context
+                  .read<EcommerceBloc>()
+                  .add(RemoveCartItemEvent(product: product));
             },
             icon: Icon(
               Icons.delete,
