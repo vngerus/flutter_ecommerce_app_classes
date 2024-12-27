@@ -10,8 +10,8 @@ class CartPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => EcommerceBloc()..add(LoadCartItemsEvent()),
+    return BlocProvider.value(
+      value: context.read<EcommerceBloc>()..add(LoadCartItemsEvent()),
       child: const CartBody(),
     );
   }

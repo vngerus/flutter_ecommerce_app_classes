@@ -5,6 +5,7 @@ enum HomeScreenState {
   loading,
   success,
   failure,
+  error,
 }
 
 class EcommerceState extends Equatable {
