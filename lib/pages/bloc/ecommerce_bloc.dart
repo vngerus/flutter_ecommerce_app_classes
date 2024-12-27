@@ -7,10 +7,10 @@ import 'package:uuid/uuid.dart';
 part 'ecommerce_event.dart';
 part 'ecommerce_state.dart';
 
-const homeUrl =
-    "https://ecommerceflutter-119f3-default-rtdb.firebaseio.com/ecommerce";
+const homeUrl = "https://ecommerceflutter-119f3-default-rtdb.firebaseio.com/";
+
 const cartUrl =
-    "https://ecommerceflutter-119f3-default-rtdb.firebaseio.com/ecommerce";
+    "https://ecommerceflutter-119f3-default-rtdb.firebaseio.com/Ecommerce.json";
 
 class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
   var uuid = Uuid();
