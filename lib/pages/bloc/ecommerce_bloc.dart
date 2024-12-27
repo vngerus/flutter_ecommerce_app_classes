@@ -27,7 +27,6 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     on<CreateNewProductEvent>(_onCreateNewProductEvent);
   }
 
-  /* Cargar productos desde Firebase */
   Future<void> _onLoadProductsEvent(
       LoadProductsEvent event, Emitter<EcommerceState> emit) async {
     emit(state.copyWith(homeScreenState: HomeScreenState.loading));
@@ -58,7 +57,6 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     }
   }
 
-  /* Cargar productos del carrito desde Firebase */
   Future<void> _onLoadCartItemsEvent(
       LoadCartItemsEvent event, Emitter<EcommerceState> emit) async {
     try {
@@ -87,7 +85,6 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     }
   }
 
-  /* Agregar producto al carrito */
   Future<void> _onAddToCartEvent(
       AddToCartEvent event, Emitter<EcommerceState> emit) async {
     final product = event.product;
@@ -123,7 +120,6 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     } catch (_) {}
   }
 
-  /* Actualizar cantidad de productos */
   Future<void> _onUpdateCartQuantityEvent(
       UpdateCartQuantityEvent event, Emitter<EcommerceState> emit) async {
     final product = event.product;
@@ -150,7 +146,6 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     } catch (_) {}
   }
 
-  /* Eliminar producto del carrito */
   Future<void> _onRemoveCartItemEvent(
       RemoveCartItemEvent event, Emitter<EcommerceState> emit) async {
     try {
@@ -162,7 +157,6 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     } catch (_) {}
   }
 
-  /* Cargar productos del catálogo */
   Future<void> _onLoadCatalogProductsEvent(
       LoadCatalogProductsEvent event, Emitter<EcommerceState> emit) async {
     emit(state.copyWith(catalogScreenState: CatalogScreenState.loading));
@@ -195,7 +189,6 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     }
   }
 
-  /* Crear un nuevo producto */
   Future<void> _onCreateNewProductEvent(
       CreateNewProductEvent event, Emitter<EcommerceState> emit) async {
     final String prodUID = uuid.v1();

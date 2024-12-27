@@ -1,5 +1,6 @@
 part of 'ecommerce_bloc.dart';
 
+/// Clase base para todos los eventos del EcommerceBloc
 sealed class EcommerceEvent extends Equatable {
   const EcommerceEvent();
 

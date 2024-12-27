@@ -5,7 +5,6 @@ enum HomeScreenState {
   loading,
   success,
   failure,
-  error,
 }
 
 enum CatalogScreenState {
@@ -25,8 +24,8 @@ class EcommerceState extends Equatable {
   const EcommerceState({
     required this.products,
     required this.cart,
-    required this.homeScreenState,
     required this.catalogProducts,
+    required this.homeScreenState,
     required this.catalogScreenState,
   });
 
@@ -34,8 +33,8 @@ class EcommerceState extends Equatable {
     return const EcommerceState(
       products: [],
       cart: [],
-      homeScreenState: HomeScreenState.none,
       catalogProducts: [],
+      homeScreenState: HomeScreenState.none,
       catalogScreenState: CatalogScreenState.none,
     );
   }
@@ -43,15 +42,15 @@ class EcommerceState extends Equatable {
   EcommerceState copyWith({
     List<ProductModel>? products,
     List<ProductModel>? cart,
-    HomeScreenState? homeScreenState,
     List<ProductModel>? catalogProducts,
+    HomeScreenState? homeScreenState,
     CatalogScreenState? catalogScreenState,
   }) {
     return EcommerceState(
       products: products ?? this.products,
       cart: cart ?? this.cart,
-      homeScreenState: homeScreenState ?? this.homeScreenState,
       catalogProducts: catalogProducts ?? this.catalogProducts,
+      homeScreenState: homeScreenState ?? this.homeScreenState,
       catalogScreenState: catalogScreenState ?? this.catalogScreenState,
     );
   }
@@ -60,8 +59,8 @@ class EcommerceState extends Equatable {
   List<Object> get props => [
         products,
         cart,
-        homeScreenState,
         catalogProducts,
+        homeScreenState,
         catalogScreenState,
       ];
 }
