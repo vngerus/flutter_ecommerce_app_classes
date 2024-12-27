@@ -40,15 +40,18 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
         return;
       }
 
-      final products = data.entries.map((entry) {
-        final value = entry.value as Map<String, dynamic>;
-        return ProductModel(
-          id: entry.key,
-          name: value["description"] ?? "Producto sin descripción",
-          price: double.tryParse(value["price"]?.toString() ?? "0") ?? 0.0,
-          imageUrl: value["image_url"] ?? "",
-        );
-      }).toList();
+      final products = data.entries
+          .map((entry) {
+            final value = entry.value as Map<String, dynamic>;
+            return ProductModel(
+              id: entry.key,
+              name: value["description"] ?? "",
+              price: double.tryParse(value["price"]?.toString() ?? "0") ?? 0.0,
+              imageUrl: value["image_url"] ?? "",
+            );
+          })
+          .where((product) => product.name.isNotEmpty && product.price > 0)
+          .toList();
 
       emit(state.copyWith(
           homeScreenState: HomeScreenState.success, products: products));
@@ -68,16 +71,19 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
         return;
       }
 
-      final cartItems = data.entries.map((entry) {
-        final value = entry.value as Map<String, dynamic>;
-        return ProductModel(
-          id: value["id"],
-          name: value["description"] ?? "Producto sin descripción",
-          price: double.tryParse(value["price"]?.toString() ?? "0") ?? 0.0,
-          imageUrl: value["image_url"] ?? "",
-          quantity: value["quantity"] ?? 1,
-        );
-      }).toList();
+      final cartItems = data.entries
+          .map((entry) {
+            final value = entry.value as Map<String, dynamic>;
+            return ProductModel(
+              id: value["id"] ?? "",
+              name: value["description"] ?? "",
+              price: double.tryParse(value["price"]?.toString() ?? "0") ?? 0.0,
+              imageUrl: value["image_url"] ?? "",
+              quantity: value["quantity"] ?? 1,
+            );
+          })
+          .where((product) => product.name.isNotEmpty && product.price > 0)
+          .toList();
 
       emit(state.copyWith(cart: cartItems));
     } catch (_) {
@@ -88,6 +94,12 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
   Future<void> _onAddToCartEvent(
       AddToCartEvent event, Emitter<EcommerceState> emit) async {
     final product = event.product;
+    if (product.name.isEmpty ||
+        product.price <= 0 ||
+        product.imageUrl.isEmpty) {
+      return;
+    }
+
     final existingIndex = state.cart.indexWhere((p) => p.id == product.id);
 
     try {
@@ -171,14 +183,18 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
         return;
       }
 
-      final catalogProducts = data.entries.map((prod) {
-        return ProductModel(
-          id: prod.key,
-          name: prod.value["description"] ?? "Producto sin descripción",
-          price: double.tryParse(prod.value["price"]?.toString() ?? "0") ?? 0.0,
-          imageUrl: prod.value["image_url"] ?? "",
-        );
-      }).toList();
+      final catalogProducts = data.entries
+          .map((prod) {
+            final value = prod.value as Map<String, dynamic>;
+            return ProductModel(
+              id: prod.key,
+              name: value["description"] ?? "",
+              price: double.tryParse(value["price"]?.toString() ?? "0") ?? 0.0,
+              imageUrl: value["image_url"] ?? "",
+            );
+          })
+          .where((product) => product.name.isNotEmpty && product.price > 0)
+          .toList();
 
       emit(state.copyWith(
         catalogScreenState: CatalogScreenState.success,
@@ -191,25 +207,36 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
 
   Future<void> _onCreateNewProductEvent(
       CreateNewProductEvent event, Emitter<EcommerceState> emit) async {
-    final String prodUID = uuid.v1();
+    try {
+      if (event.description.isEmpty ||
+          event.imageUrl.isEmpty ||
+          event.price <= 0) {
+        return;
+      }
 
-    final data = {
-      "id": prodUID,
-      "description": event.description,
-      "product": "",
-      "image_url": event.imageUrl,
-      "price": event.price
-    };
+      final String prodUID = uuid.v1();
 
-    await dio.put("$baseUrl/$prodUID.json", data: data);
+      final data = {
+        "id": prodUID,
+        "description": event.description,
+        "image_url": event.imageUrl,
+        "price": event.price,
+      };
 
-    final newProduct = ProductModel(
-      id: prodUID,
-      name: event.description,
-      price: double.parse(event.price.toString()),
-      imageUrl: event.imageUrl,
-    );
-    final updatedProducts = [...state.catalogProducts, newProduct];
-    emit(state.copyWith(catalogProducts: updatedProducts));
+      await dio.put("$baseUrl/$prodUID.json", data: data);
+
+      final newProduct = ProductModel(
+        id: prodUID,
+        name: event.description,
+        price: double.parse(event.price.toString()),
+        imageUrl: event.imageUrl,
+      );
+
+      emit(state.copyWith(
+        catalogProducts: [...state.catalogProducts, newProduct],
+      ));
+    } catch (_) {
+      emit(state.copyWith(catalogScreenState: CatalogScreenState.failure));
+    }
   }
 }

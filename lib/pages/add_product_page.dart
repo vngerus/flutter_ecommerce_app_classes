@@ -16,6 +16,7 @@ class _AddProductPageState extends State<AddProductPage> {
   final _priceController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +38,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return "La descripción es obligatoria";
                   }
                   return null;
@@ -51,10 +52,10 @@ class _AddProductPageState extends State<AddProductPage> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return "La URL de la imagen es obligatoria";
                   }
-                  if (!Uri.parse(value).isAbsolute) {
+                  if (!Uri.parse(value.trim()).isAbsolute) {
                     return "Debe ser una URL válida";
                   }
                   return null;
@@ -69,11 +70,12 @@ class _AddProductPageState extends State<AddProductPage> {
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return "El precio es obligatorio";
                   }
-                  if (double.tryParse(value) == null) {
-                    return "Debe ser un número válido";
+                  final price = double.tryParse(value.trim());
+                  if (price == null || price <= 0) {
+                    return "Debe ser un número mayor a 0";
                   }
                   return null;
                 },
@@ -86,20 +88,52 @@ class _AddProductPageState extends State<AddProductPage> {
                     backgroundColor: AppColor.green,
                     foregroundColor: AppColor.black,
                   ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      context.read<EcommerceBloc>().add(
-                            CreateNewProductEvent(
-                              description: _descriptionController.text,
-                              imageUrl: _imageUrlController.text,
-                              price: int.parse(_priceController.text),
-                              category: "General",
-                            ),
-                          );
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: const Text("Agregar producto"),
+                  onPressed: _isSubmitting
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isSubmitting = true;
+                            });
+
+                            try {
+                              context.read<EcommerceBloc>().add(
+                                    CreateNewProductEvent(
+                                      description:
+                                          _descriptionController.text.trim(),
+                                      imageUrl: _imageUrlController.text.trim(),
+                                      price: int.tryParse(
+                                              _priceController.text.trim()) ??
+                                          0,
+                                      category: "General",
+                                    ),
+                                  );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text("Producto agregado con éxito")),
+                              );
+                              Navigator.pop(context);
+                            } catch (error) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      "Error al agregar el producto. Intenta nuevamente."),
+                                ),
+                              );
+                            } finally {
+                              setState(() {
+                                _isSubmitting = false;
+                              });
+                              _resetForm();
+                            }
+                          }
+                        },
+                  child: _isSubmitting
+                      ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        )
+                      : const Text("Agregar producto"),
                 ),
               ),
             ],
@@ -107,6 +141,12 @@ class _AddProductPageState extends State<AddProductPage> {
         ),
       ),
     );
+  }
+
+  void _resetForm() {
+    _descriptionController.clear();
+    _imageUrlController.clear();
+    _priceController.clear();
   }
 
   @override
