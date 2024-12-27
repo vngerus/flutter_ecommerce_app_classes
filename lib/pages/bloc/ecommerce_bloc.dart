@@ -7,9 +7,7 @@ import 'package:uuid/uuid.dart';
 part 'ecommerce_event.dart';
 part 'ecommerce_state.dart';
 
-const homeUrl =
-    "https://ecommerceflutter-119f3-default-rtdb.firebaseio.com/Ecommerce";
-const cartUrl =
+const baseUrl =
     "https://ecommerceflutter-119f3-default-rtdb.firebaseio.com/Ecommerce";
 
 class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
@@ -25,6 +23,8 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     on<AddToCartEvent>(_onAddToCartEvent);
     on<UpdateCartQuantityEvent>(_onUpdateCartQuantityEvent);
     on<RemoveCartItemEvent>(_onRemoveCartItemEvent);
+    on<LoadCatalogProductsEvent>(_onLoadCatalogProductsEvent);
+    on<CreateNewProductEvent>(_onCreateNewProductEvent);
   }
 
   /* Cargar productos desde Firebase */
@@ -32,7 +32,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
       LoadProductsEvent event, Emitter<EcommerceState> emit) async {
     emit(state.copyWith(homeScreenState: HomeScreenState.loading));
     try {
-      final response = await dio.get('$homeUrl.json');
+      final response = await dio.get('$baseUrl.json');
       final data = response.data as Map<String, dynamic>?;
 
       if (data == null) {
@@ -43,18 +43,17 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
 
       final products = data.entries.map((entry) {
         final value = entry.value as Map<String, dynamic>;
-
         return ProductModel(
           id: entry.key,
-          name: value["description"],
-          price: double.tryParse(value["price"].toString()) ?? 0.0,
-          imageUrl: value["image_url"],
+          name: value["description"] ?? "Producto sin descripción",
+          price: double.tryParse(value["price"]?.toString() ?? "0") ?? 0.0,
+          imageUrl: value["image_url"] ?? "",
         );
       }).toList();
 
       emit(state.copyWith(
           homeScreenState: HomeScreenState.success, products: products));
-    } catch (e) {
+    } catch (_) {
       emit(state.copyWith(homeScreenState: HomeScreenState.failure));
     }
   }
@@ -63,7 +62,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
   Future<void> _onLoadCartItemsEvent(
       LoadCartItemsEvent event, Emitter<EcommerceState> emit) async {
     try {
-      final response = await dio.get('$cartUrl.json');
+      final response = await dio.get('$baseUrl/cart.json');
       final data = response.data as Map<String, dynamic>?;
 
       if (data == null) {
@@ -75,15 +74,15 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
         final value = entry.value as Map<String, dynamic>;
         return ProductModel(
           id: value["id"],
-          name: value["description"],
-          price: double.tryParse(value["price"].toString()) ?? 0.0,
-          imageUrl: value["image_url"],
+          name: value["description"] ?? "Producto sin descripción",
+          price: double.tryParse(value["price"]?.toString() ?? "0") ?? 0.0,
+          imageUrl: value["image_url"] ?? "",
           quantity: value["quantity"] ?? 1,
         );
       }).toList();
 
       emit(state.copyWith(cart: cartItems));
-    } catch (e) {
+    } catch (_) {
       emit(state.copyWith(cart: []));
     }
   }
@@ -99,7 +98,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
         final existingProduct = state.cart[existingIndex];
         final newQuantity = existingProduct.quantity + 1;
 
-        await dio.patch("$cartUrl/${product.id}.json",
+        await dio.patch("$baseUrl/cart/${product.id}.json",
             data: {"quantity": newQuantity});
 
         final updatedCart = List<ProductModel>.from(state.cart);
@@ -109,7 +108,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
         emit(state.copyWith(cart: updatedCart));
       } else {
         await dio.put(
-          "$cartUrl/${product.id}.json",
+          "$baseUrl/cart/${product.id}.json",
           data: {
             "id": product.id,
             "description": product.name,
@@ -121,7 +120,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
 
         emit(state.copyWith(cart: [...state.cart, product]));
       }
-    } on DioException catch (_) {}
+    } catch (_) {}
   }
 
   /* Actualizar cantidad de productos */
@@ -132,7 +131,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
 
     try {
       if (newQuantity > 0) {
-        await dio.patch("$cartUrl/${product.id}.json",
+        await dio.patch("$baseUrl/cart/${product.id}.json",
             data: {"quantity": newQuantity});
 
         final updatedCart = state.cart.map((p) {
@@ -148,7 +147,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
             state.cart.where((p) => p.id != product.id).toList();
         emit(state.copyWith(cart: updatedCart));
       }
-    } on DioException catch (_) {}
+    } catch (_) {}
   }
 
   /* Eliminar producto del carrito */
@@ -161,5 +160,63 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
 
       emit(state.copyWith(cart: updatedCart));
     } catch (_) {}
+  }
+
+  /* Cargar productos del catálogo */
+  Future<void> _onLoadCatalogProductsEvent(
+      LoadCatalogProductsEvent event, Emitter<EcommerceState> emit) async {
+    emit(state.copyWith(catalogScreenState: CatalogScreenState.loading));
+    try {
+      final response = await dio.get('$baseUrl.json');
+      final data = response.data as Map<String, dynamic>?;
+
+      if (data == null) {
+        emit(state.copyWith(
+            catalogScreenState: CatalogScreenState.success,
+            catalogProducts: []));
+        return;
+      }
+
+      final catalogProducts = data.entries.map((prod) {
+        return ProductModel(
+          id: prod.key,
+          name: prod.value["description"] ?? "Producto sin descripción",
+          price: double.tryParse(prod.value["price"]?.toString() ?? "0") ?? 0.0,
+          imageUrl: prod.value["image_url"] ?? "",
+        );
+      }).toList();
+
+      emit(state.copyWith(
+        catalogScreenState: CatalogScreenState.success,
+        catalogProducts: catalogProducts,
+      ));
+    } catch (_) {
+      emit(state.copyWith(catalogScreenState: CatalogScreenState.failure));
+    }
+  }
+
+  /* Crear un nuevo producto */
+  Future<void> _onCreateNewProductEvent(
+      CreateNewProductEvent event, Emitter<EcommerceState> emit) async {
+    final String prodUID = uuid.v1();
+
+    final data = {
+      "id": prodUID,
+      "description": event.description,
+      "product": "",
+      "image_url": event.imageUrl,
+      "price": event.price
+    };
+
+    await dio.put("$baseUrl/$prodUID.json", data: data);
+
+    final newProduct = ProductModel(
+      id: prodUID,
+      name: event.description,
+      price: double.parse(event.price.toString()),
+      imageUrl: event.imageUrl,
+    );
+    final updatedProducts = [...state.catalogProducts, newProduct];
+    emit(state.copyWith(catalogProducts: updatedProducts));
   }
 }
