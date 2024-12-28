@@ -1,6 +1,5 @@
 part of 'ecommerce_bloc.dart';
 
-/// Clase base para todos los eventos del EcommerceBloc
 sealed class EcommerceEvent extends Equatable {
   const EcommerceEvent();
 
@@ -60,4 +59,13 @@ class CreateNewProductEvent extends EcommerceEvent {
 
   @override
   List<Object> get props => [description, category, imageUrl, price];
+}
+
+class EditProductEvent extends EcommerceEvent {
+  final ProductModel updatedProduct;
+
+  const EditProductEvent({required this.updatedProduct});
+
+  @override
+  List<Object> get props => [updatedProduct];
 }

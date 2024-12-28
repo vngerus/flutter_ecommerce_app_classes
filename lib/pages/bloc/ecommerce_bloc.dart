@@ -25,6 +25,7 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
     on<RemoveCartItemEvent>(_onRemoveCartItemEvent);
     on<LoadCatalogProductsEvent>(_onLoadCatalogProductsEvent);
     on<CreateNewProductEvent>(_onCreateNewProductEvent);
+    on<EditProductEvent>(_onEditProductEvent);
   }
 
   Future<void> _onLoadProductsEvent(
@@ -235,6 +236,33 @@ class EcommerceBloc extends Bloc<EcommerceEvent, EcommerceState> {
       emit(state.copyWith(
         catalogProducts: [...state.catalogProducts, newProduct],
       ));
+    } catch (_) {
+      emit(state.copyWith(catalogScreenState: CatalogScreenState.failure));
+    }
+  }
+
+  Future<void> _onEditProductEvent(
+      EditProductEvent event, Emitter<EcommerceState> emit) async {
+    try {
+      final updatedProduct = event.updatedProduct;
+
+      await dio.patch(
+        "$baseUrl/${updatedProduct.id}.json",
+        data: {
+          "description": updatedProduct.name,
+          "image_url": updatedProduct.imageUrl,
+          "price": updatedProduct.price,
+        },
+      );
+
+      final updatedCatalog = state.catalogProducts.map((product) {
+        if (product.id == updatedProduct.id) {
+          return updatedProduct;
+        }
+        return product;
+      }).toList();
+
+      emit(state.copyWith(catalogProducts: updatedCatalog));
     } catch (_) {
       emit(state.copyWith(catalogScreenState: CatalogScreenState.failure));
     }

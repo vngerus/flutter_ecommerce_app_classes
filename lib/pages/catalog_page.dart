@@ -43,7 +43,7 @@ class Body extends StatelessWidget {
           }
           if (state.catalogProducts.isEmpty) {
             return const Center(
-              child: Text("Aun no hay productos agregados."),
+              child: Text("Aún no hay productos agregados."),
             );
           }
 
@@ -55,14 +55,62 @@ class Body extends StatelessWidget {
                 title: Text(catalogProd.name),
                 subtitle: Text("\$${catalogProd.price}"),
                 trailing: Image.network(catalogProd.imageUrl),
-                leading: IconButton(
-                  onPressed: () {
-                    // TODO: metodo para eliminar
-                  },
-                  icon: Icon(
-                    Icons.delete,
-                    color: AppColor.red,
-                  ),
+                leading: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddProductPage(
+                              isEditing: true,
+                              product: catalogProd,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: Icon(
+                        Icons.edit,
+                        color: AppColor.green,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text("Eliminar producto"),
+                              content: const Text(
+                                  "¿Estás seguro de que deseas eliminar este producto?"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("Cancelar"),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    context.read<EcommerceBloc>().add(
+                                          RemoveCartItemEvent(
+                                            product: catalogProd,
+                                          ),
+                                        );
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text("Eliminar"),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      icon: Icon(
+                        Icons.delete,
+                        color: AppColor.red,
+                      ),
+                    ),
+                  ],
                 ),
               );
             },

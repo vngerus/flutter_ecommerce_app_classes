@@ -1,10 +1,14 @@
+import 'package:ecommerce_app/model/product_model.dart';
 import 'package:ecommerce_app/pages/bloc/ecommerce_bloc.dart';
 import 'package:ecommerce_app/widgets/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AddProductPage extends StatefulWidget {
-  const AddProductPage({super.key});
+  final bool isEditing;
+  final ProductModel? product;
+
+  const AddProductPage({super.key, this.isEditing = false, this.product});
 
   @override
   State<AddProductPage> createState() => _AddProductPageState();
@@ -19,10 +23,20 @@ class _AddProductPageState extends State<AddProductPage> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.isEditing && widget.product != null) {
+      _descriptionController.text = widget.product!.name;
+      _imageUrlController.text = widget.product!.imageUrl;
+      _priceController.text = widget.product!.price.toString();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Nuevo producto"),
+        title: Text(widget.isEditing ? "Editar producto" : "Nuevo producto"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -97,28 +111,58 @@ class _AddProductPageState extends State<AddProductPage> {
                             });
 
                             try {
-                              context.read<EcommerceBloc>().add(
-                                    CreateNewProductEvent(
-                                      description:
-                                          _descriptionController.text.trim(),
-                                      imageUrl: _imageUrlController.text.trim(),
-                                      price: int.tryParse(
-                                              _priceController.text.trim()) ??
-                                          0,
-                                      category: "General",
-                                    ),
-                                  );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                              if (widget.isEditing) {
+                                context.read<EcommerceBloc>().add(
+                                      EditProductEvent(
+                                        updatedProduct:
+                                            widget.product!.copyWith(
+                                          name: _descriptionController.text
+                                              .trim(),
+                                          imageUrl:
+                                              _imageUrlController.text.trim(),
+                                          price: double.tryParse(
+                                                _priceController.text.trim(),
+                                              ) ??
+                                              0,
+                                        ),
+                                      ),
+                                    );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
                                     content:
-                                        Text("Producto agregado con éxito")),
-                              );
+                                        Text("Producto editado con éxito."),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              } else {
+                                context.read<EcommerceBloc>().add(
+                                      CreateNewProductEvent(
+                                        description:
+                                            _descriptionController.text.trim(),
+                                        imageUrl:
+                                            _imageUrlController.text.trim(),
+                                        price: int.tryParse(
+                                                _priceController.text.trim()) ??
+                                            0,
+                                        category: "General",
+                                      ),
+                                    );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text("Producto agregado con éxito."),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
                               Navigator.pop(context);
                             } catch (error) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
-                                      "Error al agregar el producto. Intenta nuevamente."),
+                                    "Error: ${error.toString()}",
+                                  ),
+                                  backgroundColor: Colors.red,
                                 ),
                               );
                             } finally {
@@ -133,7 +177,9 @@ class _AddProductPageState extends State<AddProductPage> {
                       ? const CircularProgressIndicator(
                           color: Colors.white,
                         )
-                      : const Text("Agregar producto"),
+                      : Text(widget.isEditing
+                          ? "Guardar cambios"
+                          : "Agregar producto"),
                 ),
               ),
             ],
